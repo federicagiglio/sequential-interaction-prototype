@@ -1,4 +1,5 @@
-/* Scan — the shared scan-line core, extracted unchanged from the three studies (the block was byte-identical in each).
+/* Scan — the shared scan-line core, extracted from the three studies (the block was byte-identical in each).
+   Only change: canvasFit takes an optional ground colour.
    Rule: the brightness under each line lifts it, Rutt/Etra style. */
 const Scan = (() => {
   // Turn any image source into a small grey array we can sample quickly.
@@ -47,10 +48,10 @@ const Scan = (() => {
     }
     ctx.stroke();
   }
-  function canvasFit(cv) {
+  function canvasFit(cv, fill) {              // fill: ground colour (added for the behavior controls; studies used #000)
     const dpr = Math.min(2, devicePixelRatio || 1), W = cv.clientWidth, H = cv.clientHeight;
     if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
-    const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+    const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.fillStyle = fill || '#000'; ctx.fillRect(0, 0, W, H);
     return { ctx, W, H };
   }
   function loadImage(src) { return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('That file could not be read as a picture.')); i.src = src; }); }

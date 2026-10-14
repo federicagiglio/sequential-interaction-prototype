@@ -24,6 +24,21 @@
   </ol>
 </header>
 <div class="hint" id="hint">the picture becomes the signal for the lines</div>
+
+<!-- Behavior controls: collapsible panel bound to the prototype's real look-and-feel parameters (js/behavior.js). -->
+<button class="bc-toggle" id="bcToggle" type="button" aria-expanded="false" aria-controls="bc">behavior controls</button>
+<aside class="bc" id="bc" hidden aria-label="Behavior controls">
+  <header class="bc-head"><b>behavior controls</b><button id="bcClose" type="button" aria-label="Close behavior controls">close ×</button></header>
+  <div class="bc-body" id="bcBody"></div>
+  <footer class="bc-foot">
+    <div class="bc-acts">
+      <button id="bcReset" type="button" title="Back to the empty frame; controls are kept">reset state</button>
+      <button id="bcDefaults" type="button" title="Put every control back to its default">restore defaults</button>
+      <button id="bcCopy" type="button" title="Copy all values as a prompt you can paste">copy as prompt</button>
+    </div>
+    <div class="bc-note" id="bcNote" role="status"></div>
+  </footer>
+</aside>
 <div class="sr" id="announce" role="status" aria-live="polite"></div>
 
 <!-- One dock at the bottom. Each step owns one panel; only the current panel is visible and reachable. -->
@@ -79,6 +94,7 @@
 
 <script src="js/scan.js"></script>
 <script src="js/paper.js"></script>
+<script src="js/behavior.js"></script>
 <script src="js/capture.js"></script>
 <script src="js/tune.js"></script>
 <script src="js/warp.js"></script>
