@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Scan Lines — Signal You Can Touch</title>
+<meta name="description" content="A sequential interaction prototype: capture a picture, tune it into scan lines, then warp the lines by hand.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-step="capture">
+
+<!-- The paper: one canvas and one framed picture rectangle that persist through every step. -->
+<div class="stage" id="stage"><canvas id="cv"></canvas></div>
+<div class="frame" id="frame"><p>no picture yet<br>take one or upload one below</p></div>
+
+<header class="top">
+  <div class="tag"><b id="stepTag">01 / capture</b><span>signal you can touch</span></div>
+  <ol class="progress" aria-label="Sequence">
+    <li data-for="capture">capture</li>
+    <li data-for="tune">tune</li>
+    <li data-for="warp">warp</li>
+    <li data-for="done">done</li>
+  </ol>
+</header>
+<div class="hint" id="hint">the picture becomes the signal for the lines</div>
+<div class="sr" id="announce" role="status" aria-live="polite"></div>
+
+<!-- One dock at the bottom. Each step owns one panel; only the current panel is visible and reachable. -->
+<div class="dock" id="dock">
+
+  <section class="bar panel" data-panel="capture" aria-label="Step 1: capture">
+    <h2><span>source picture</span><output id="dims">—</output></h2>
+    <div class="choices">
+      <label for="take"><b>Take a picture</b><span>opens the camera on phones and tablets</span>
+        <input type="file" id="take" accept="image/*" capture="user"></label>
+      <label for="pick"><b>Upload a picture</b><span>JPEG, PNG, WebP or GIF from this device</span>
+        <input type="file" id="pick" accept="image/*"></label>
+    </div>
+    <div class="foot">
+      <div class="status" id="status" role="status">Nothing leaves your device. The picture stays in this page.</div>
+      <button class="next" id="toTune" type="button" disabled>next: tune →</button>
+    </div>
+  </section>
+
+  <section class="bar panel" data-panel="tune" aria-label="Step 2: tune">
+    <h2><span>lines</span><span id="tuneCount">move each slider · 0 / 3</span></h2>
+    <div class="ctls">
+      <div class="ctl" data-k="lines"><label for="lines">how many <i aria-hidden="true">✓</i></label><output id="o_lines"></output><input type="range" id="lines" min="20" max="300" step="1" value="110"></div>
+      <div class="ctl" data-k="angle"><label for="angle">direction <i aria-hidden="true">✓</i></label><output id="o_angle"></output><input type="range" id="angle" min="0" max="180" step="1" value="0"></div>
+      <div class="ctl" data-k="weight"><label for="weight">density <i aria-hidden="true">✓</i></label><output id="o_weight"></output><input type="range" id="weight" min="0.3" max="4" step="0.05" value="1.4"></div>
+    </div>
+    <div class="foot">
+      <div class="status">slide to redraw · the signal locks when you move on</div>
+      <button class="next" id="toWarp" type="button" disabled>next: warp →</button>
+    </div>
+  </section>
+
+  <section class="bar panel" data-panel="warp" aria-label="Step 3: warp">
+    <h2><span>drag to pull lines · pinch to spread or squeeze them</span><output id="state">untouched</output></h2>
+    <p class="note">with a mouse: drag to pull, scroll to spread or squeeze · double-tap clears the warp</p>
+    <div class="foot">
+      <div class="status">the picture travels with the lines you move</div>
+      <button class="next" id="toDone" type="button">finish →</button>
+    </div>
+  </section>
+
+  <section class="bar panel end" data-panel="done" aria-label="Finished">
+    <div class="foot">
+      <div class="status">signal shaped by hand</div>
+      <div class="acts">
+        <button id="save" type="button">save image</button>
+        <button id="restart" type="button">start over</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script src="js/scan.js"></script>
+<script src="js/paper.js"></script>
+<script src="js/capture.js"></script>
+<script src="js/tune.js"></script>
+<script src="js/warp.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
