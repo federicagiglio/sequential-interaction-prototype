@@ -6,13 +6,13 @@
 <title>Scan Lines — Signal You Can Touch</title>
 <meta name="description" content="A sequential interaction prototype: capture a picture, tune it into scan lines, then warp the lines by hand.">
 <!-- ?v= forces browsers to fetch matching files after each update; bump it whenever css or js changes -->
-<link rel="stylesheet" href="css/style.css?v=5">
+<link rel="stylesheet" href="css/style.css?v=6">
 </head>
 <body data-step="capture">
 
 <!-- The paper: one canvas and one framed picture rectangle that persist through every step. -->
 <div class="stage" id="stage"><canvas id="cv"></canvas></div>
-<div class="frame" id="frame"><p>no picture yet<br>take one, upload one, or start a live view below</p></div>
+<div class="frame" id="frame"><p>no picture yet<br>take or upload a picture, upload a video, or start a live view below</p></div>
 
 <header class="top">
   <div class="tag"><b id="stepTag">01 / capture</b><span>signal you can touch</span></div>
@@ -37,6 +37,8 @@
       <button type="button" class="choice" id="take"><b>Take a picture</b><span>opens this device's camera</span></button>
       <label for="pick"><b>Upload a picture</b><span>JPEG, PNG, WebP or GIF from this device</span>
         <input type="file" id="pick" accept="image/*"></label>
+      <label for="pickVideo"><b>Upload a video</b><span>MP4, WebM or MOV · loops behind the lines</span>
+        <input type="file" id="pickVideo" accept="video/*"></label>
       <button type="button" class="choice" id="live" aria-pressed="false"><b>Live view</b><span>use the running camera, no picture needed</span></button>
       <!-- fallback when the browser cannot open the camera directly (no getUserMedia, e.g. outside HTTPS) -->
       <input type="file" id="takeFile" accept="image/*" capture="user" hidden>
@@ -77,9 +79,19 @@
 
   <section class="bar panel" data-panel="play" aria-label="Step 4: play">
     <h2><span>make the lines move</span><span>optional · move over the lines</span></h2>
+    <div class="moves" role="group" aria-label="Motion style">
+      <button type="button" data-kind="none" title="no motion of its own">still</button>
+      <button type="button" data-kind="flow" title="organic, wind-like wandering">flow</button>
+      <button type="button" data-kind="ripple" title="rings spreading out; tap the sheet to move the centre">ripple</button>
+      <button type="button" data-kind="breathe" title="the whole sheet swells and settles">breathe</button>
+      <button type="button" data-kind="glitch" title="VHS tears and jumps">glitch</button>
+      <button type="button" data-kind="twist" title="a vortex turning back and forth; tap to move the centre">twist</button>
+      <button type="button" data-kind="jitter" title="nervous static">jitter</button>
+      <button type="button" data-kind="wave" title="a wave rolling along the lines">wave</button>
+    </div>
     <div class="ctls">
-      <div class="ctl"><label for="fx_drift">drift</label><output id="o_fx_drift"></output><input type="range" id="fx_drift" min="0" max="30" step="0.5" value="4"></div>
-      <div class="ctl"><label for="fx_speed">drift speed</label><output id="o_fx_speed"></output><input type="range" id="fx_speed" min="0.05" max="3" step="0.05" value="0.3"></div>
+      <div class="ctl"><label for="fx_amount">motion amount</label><output id="o_fx_amount"></output><input type="range" id="fx_amount" min="0" max="40" step="0.5" value="8"></div>
+      <div class="ctl"><label for="fx_speed">motion speed</label><output id="o_fx_speed"></output><input type="range" id="fx_speed" min="0.05" max="3" step="0.05" value="0.4"></div>
       <div class="ctl"><label for="fx_gain">sound strength</label><output id="o_fx_gain"></output><input type="range" id="fx_gain" min="0" max="3" step="0.05" value="1"></div>
       <div class="ctl"><label for="fx_pull">magnet pull</label><output id="o_fx_pull"></output><input type="range" id="fx_pull" min="0" max="60" step="1" value="18"></div>
       <div class="ctl"><label for="fx_size">magnet size</label><output id="o_fx_size"></output><input type="range" id="fx_size" min="5" max="50" step="1" value="18"></div>
@@ -107,14 +119,14 @@
 
 </div>
 
-<script src="js/scan.js?v=5"></script>
-<script src="js/paper.js?v=5"></script>
-<script src="js/settings.js?v=5"></script>
-<script src="js/capture.js?v=5"></script>
-<script src="js/tune.js?v=5"></script>
-<script src="js/warp.js?v=5"></script>
-<script src="js/record.js?v=5"></script>
-<script src="js/play.js?v=5"></script>
-<script src="js/app.js?v=5"></script>
+<script src="js/scan.js?v=6"></script>
+<script src="js/paper.js?v=6"></script>
+<script src="js/settings.js?v=6"></script>
+<script src="js/capture.js?v=6"></script>
+<script src="js/tune.js?v=6"></script>
+<script src="js/warp.js?v=6"></script>
+<script src="js/record.js?v=6"></script>
+<script src="js/play.js?v=6"></script>
+<script src="js/app.js?v=6"></script>
 </body>
 </html>

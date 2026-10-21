@@ -1,11 +1,12 @@
 /* Step 04 — Play. Make the lines move, then record them.
-   Drift: a slow wave rolls along the lines (from Tune onward). Magnet: lines bend away from the cursor or finger.
+   Motion: choose a style (still, flow, ripple, breathe, glitch, twist, jitter, wave) with an amount and a speed.
+   Magnet: lines bend away from the cursor or finger. Tapping the sheet moves the centre of ripple and twist.
    Sound: with the microphone on, each stretch of line shakes with its own frequency band. Everything here is optional. */
 const Play = (() => {
   const S = Paper.S, $ = id => document.getElementById(id), next = $('toDone'), status = $('playStatus'), soundBtn = $('sound');
-  const DEFAULTS = { drift: 4, speed: 0.3, pull: 18, size: 18, gain: 1 };
+  const DEFAULTS = { amount: 8, speed: 0.4, pull: 18, size: 18, gain: 1 };
   const fmt = {
-    drift: v => v.toFixed(1) + ' px',
+    amount: v => v.toFixed(1) + ' px',
     speed: v => v.toFixed(2) + ' Hz',
     pull: v => v + ' px',
     size: v => v + ' % of height',
@@ -15,6 +16,15 @@ const Play = (() => {
     const el = $('fx_' + k), out = $('o_fx_' + k);
     el.addEventListener('input', () => { S.fx[k] = +el.value; out.textContent = fmt[k](S.fx[k]); Paper.ask(); });
   }
+
+  /* ---- motion style ---- */
+  const kinds = [...document.querySelectorAll('.moves [data-kind]')];
+  function setKind(k) {
+    S.fx.kind = k;
+    for (const b of kinds) b.setAttribute('aria-pressed', b.dataset.kind === k);
+    Paper.ask();
+  }
+  for (const b of kinds) b.addEventListener('click', () => setKind(b.dataset.kind));
 
   /* ---- magnet: follow the cursor (hover) or a finger (touch) over the stage ---- */
   const stage = $('stage'), cv = Paper.canvas;
@@ -26,7 +36,10 @@ const Play = (() => {
     S.hover = local(e);
   }
   stage.addEventListener('pointermove', track);
-  stage.addEventListener('pointerdown', track);
+  stage.addEventListener('pointerdown', e => {
+    track(e);
+    if (S.step === 'play' || S.step === 'done') { S.origin = local(e); Paper.ask(); }   // tap: new centre for ripple and twist
+  });
   const lose = e => { if (e.type !== 'pointerup' || e.pointerType !== 'mouse') S.hover = null; };
   ['pointerleave', 'pointercancel', 'pointerup'].forEach(t => stage.addEventListener(t, lose));
 
@@ -65,15 +78,15 @@ const Play = (() => {
   soundBtn.addEventListener('click', () => mic ? (soundOff(), say(HINT)) : soundOn());
   Recorder.audio = () => mic && mic.getAudioTracks()[0];   // recordings include the microphone when it is on
 
-  const HINT = 'move over the lines · record whenever you like';
+  const HINT = 'pick a motion · move over the lines · tap to move the centre';
   const say = msg => { status.textContent = msg; };
 
   function reset() {
-    Object.assign(S.fx, DEFAULTS); S.hover = null; S.magnet = 0;
+    Object.assign(S.fx, DEFAULTS); setKind('none'); S.hover = null; S.magnet = 0; S.origin = null;
     for (const k of Object.keys(DEFAULTS)) { $('fx_' + k).value = DEFAULTS[k]; $('o_fx_' + k).textContent = fmt[k](DEFAULTS[k]); }
     soundOff(); say(HINT);
   }
   reset();
   addEventListener('pagehide', soundOff);
-  return { next, reset, focus: () => $('fx_drift').focus() };
+  return { next, reset, focus: () => kinds[0].focus() };
 })();
