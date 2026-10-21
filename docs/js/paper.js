@@ -9,14 +9,18 @@ const Paper = (() => {
     step: 'capture',
     pic: null, picURL: null,                    // study 01 output
     G: null,                                    // grey signal, Scan.toGrey(pic, T.res)
-    P: { lines: 110, angle: 0, weight: 1.4 },   // study 02 output
+    P: { lines: 110, angle: 0, weight: 1.4, colour: false },   // study 02 output (+ b/w or colour lines)
     FX: new Float32Array(FW * FH), FY: new Float32Array(FW * FH), edits: 0,   // study 03 output
     ring: null,                                 // brush ring overlay (study 03)
     mix: 1,                                     // 0 = photo, 1 = scan lines; animated when the picture becomes the signal
     live: null,                                 // webcam <video> while the snap preview is open (capture step)
     feed: null,                                 // webcam <video> in live view: S.pic is then a canvas refreshed every frame
+    fx: { drift: 4, speed: 0.3, pull: 18, size: 18, gain: 1 },   // play controls: drift px / Hz, magnet px / % height, sound gain
+    hover: null, magnet: 0,                     // cursor or finger position (magnet) and its eased strength 0–1
+    spectrum: null,                             // Float32Array 0–1 per frequency band while the microphone is on
   };
   let R = null, Sheet = null, queued = false;
+  const api = { onFrame: null };                // public surface, filled in at the end; onFrame is set while recording
   const T = () => Settings.T;
 
   /* Reserve room for the tallest panel so the paper keeps one size and position for the whole sequence. */
@@ -44,17 +48,26 @@ const Paper = (() => {
   }
   const fieldWarp = (x, y) => { const d = fieldAt((x - R.x) / R.w, (y - R.y) / R.h); return [d[0] * R.h, d[1] * R.h]; };
 
-  /* Idle motion (settings). Returns a warp(x, y) for time t in seconds, or null when off. */
+  /* Living lines: drift (a wave rolling along the lines), magnet (lines bend away from the cursor or finger)
+     and sound (each stretch of line shakes with its own frequency band, low on one side, high on the other).
+     Returns a warp(x, y) for time t in seconds, or null when everything is still. */
   function motion(t, Rect) {
-    const { motion: m, amp: A, speed: f, angle } = { ...T(), angle: S.P.angle };
-    if (m === 'none' || !A) return null;
-    const th = angle * Math.PI / 180, nx = -Math.sin(th), ny = Math.cos(th), ph = 2 * Math.PI * f * t;
-    const cx = Rect.x + Rect.w / 2, cy = Rect.y + Rect.h / 2;
-    if (m === 'wave') return (x, y) => { const s = A * Math.sin(ph - ((x - Rect.x) * Math.cos(th) + (y - Rect.y) * Math.sin(th)) / Rect.w * 4 * Math.PI); return [nx * s, ny * s]; };
-    if (m === 'bounce') { const h = -A * Math.abs(Math.sin(ph / 2)); return () => [0, h]; }
-    if (m === 'breathe') { const k = A / Rect.h * Math.sin(ph); return (x, y) => [(x - cx) * k, (y - cy) * k]; }
-    if (m === 'jitter') { const fr = Math.floor(t * f * 12); return (x, y) => { const h = Math.sin(x * 12.9898 + y * 78.233 + fr * 37.719) * 43758.5453; const r = h - Math.floor(h); return [0, (r - 0.5) * 2 * A]; }; }
-    return null;
+    const F = S.fx, th = S.P.angle * Math.PI / 180, ax = Math.cos(th), ay = Math.sin(th), nx = -ay, ny = ax;
+    const drift = F.drift > 0, mag = S.magnet > 0.001 && S.hover && F.pull > 0, B = S.spectrum && F.gain > 0 ? S.spectrum : null;
+    if (!drift && !mag && !B) return null;
+    const ph = 2 * Math.PI * F.speed * t, h = S.hover, r2 = (Rect.h * F.size / 100) ** 2, pull = F.pull * S.magnet;
+    const nb = B ? B.length : 0, top = nb * 0.7, sAmp = Rect.h * 0.06 * F.gain;
+    return (x, y) => {
+      let dx = 0, dy = 0;
+      const along = Math.min(1, Math.max(0, ((x - Rect.x) * ax + (y - Rect.y) * ay) / Rect.w));
+      if (drift) { const s = F.drift * Math.sin(ph - along * 4 * Math.PI); dx += nx * s; dy += ny * s; }
+      if (B) { const k = B[Math.min(nb - 1, Math.round(2 * Math.pow(top / 2, along)))]; const s = sAmp * k * Math.sin(t * 38 + y * 0.35); dx += nx * s; dy += ny * s; }
+      if (mag) {
+        const ex = x - h.x, ey = y - h.y, d2 = ex * ex + ey * ey;
+        if (d2 < 9 * r2) { const d = Math.sqrt(d2) || 1, w = pull * Math.exp(-d2 / r2); dx += ex / d * w; dy += ey / d * w; }
+      }
+      return [dx, dy];
+    };
   }
 
   function lines(ctx, Rect, t) {
@@ -62,8 +75,8 @@ const Paper = (() => {
     const warp = fw && mv ? (x, y) => { const a = fw(x, y), b = mv(x, y); return [a[0] + b[0], a[1] + b[1]]; } : fw || mv;
     ctx.save();
     ctx.globalAlpha *= o.lineA;
-    if (o.glow) { ctx.shadowColor = o.ink; ctx.shadowBlur = o.glow; }
-    Scan.draw(ctx, S.G, Rect, { lines: S.P.lines, angle: S.P.angle, weight: S.P.weight, depth: o.depth, smooth: o.smooth, ink: o.ink, warp });
+    if (o.glow) { ctx.shadowColor = S.P.colour ? 'rgba(255,255,255,.5)' : o.ink; ctx.shadowBlur = o.glow; }
+    Scan.draw(ctx, S.G, Rect, { lines: S.P.lines, angle: S.P.angle, weight: S.P.weight, depth: o.depth, smooth: o.smooth, ink: o.ink, tint: S.P.colour, warp });
     ctx.restore();
   }
 
@@ -91,6 +104,7 @@ const Paper = (() => {
     R = inner(Sheet);
     paint(ctx, (now || performance.now()) / 1000);
     if (S.ring && o.ringA) { ctx.strokeStyle = o.ink; ctx.globalAlpha = o.ringA; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(S.ring.x, S.ring.y, S.ring.r, 0, 7); ctx.stroke(); ctx.globalAlpha = 1; }
+    if (api.onFrame) api.onFrame(cv, Sheet);    // video recorder copies the sheet from here
   }
   /* Picture rectangle inside the sheet; extra room on top for the brightness lift. */
   function inner(F, w = S.pic.naturalWidth || S.pic.width, h = S.pic.naturalHeight || S.pic.height) {
@@ -114,9 +128,13 @@ const Paper = (() => {
   function setFeed(v) { S.feed = v; S.pic = document.createElement('canvas'); lastFrame = -1; grab(); ask(); }
   function clearFeed() { S.feed = null; lastFrame = -1; }
 
-  /* Keep redrawing while a camera is showing, or while idle motion is on and lines are showing. */
+  /* Keep redrawing while a camera is showing, while the lines are alive (drift, magnet, sound) or while recording. */
   (function loop() {
-    if (S.live || (S.feed && grab()) || (S.G && T().motion !== 'none' && T().amp)) ask();
+    const target = S.hover && S.G ? 1 : 0;
+    S.magnet += (target - S.magnet) * 0.12;     // magnet eases in and lets go softly
+    if (S.magnet < 0.001 && !target) S.magnet = 0;
+    const alive = S.G && S.mix > 0 && (S.fx.drift > 0 || S.magnet > 0 || S.spectrum);
+    if (S.live || (S.feed && grab()) || alive || api.onFrame) ask();
     requestAnimationFrame(loop);
   })();
 
@@ -144,5 +162,6 @@ const Paper = (() => {
   function clearWarp() { S.FX.fill(0); S.FY.fill(0); S.edits = 0; }
 
   addEventListener('resize', ask);
-  return { S, FW, FH, rect: () => R, sheet: () => Sheet, canvas: cv, render, ask, crossfade, exportPNG, clearWarp, signal, resignal, setFeed, clearFeed };
+  Object.assign(api, { S, FW, FH, rect: () => R, sheet: () => Sheet, canvas: cv, render, ask, crossfade, exportPNG, clearWarp, signal, resignal, setFeed, clearFeed });
+  return api;
 })();

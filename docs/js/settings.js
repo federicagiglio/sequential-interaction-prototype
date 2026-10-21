@@ -21,10 +21,7 @@ const Settings = (() => {
     smooth: 0.3,          // signal smoothing along a line, 0–0.9
     res: 260,             // px, longest side of the sampled picture
     invert: false,        // dark areas lift instead of bright
-    // Motion
-    motion: 'none',       // idle motion: none | wave | bounce | breathe | jitter
-    amp: 6,               // px
-    speed: 0.5,           // Hz
+    // Motion (drift, magnet and sound live in the play step: Paper.S.fx)
     crossfade: 900,       // ms, photo → lines
     fade: 450,            // ms, panel transition
     // Warp gestures

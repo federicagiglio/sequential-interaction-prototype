@@ -1,9 +1,9 @@
 /* Step 03 — Warp (from study 03).
    Drag pulls lines, pinch spreads or squeezes them, the wheel does the same with a mouse; double-tap clears the warp.
-   The warp sits on top of the lines tuned in step 02. "finish" is available at any time. */
+   The warp sits on top of the lines tuned in step 02. "next: play" is available at any time. */
 const Warp = (() => {
   const S = Paper.S, FW = Paper.FW, FH = Paper.FH, stage = document.getElementById('stage'), cv = Paper.canvas;
-  const stateOut = document.getElementById('state'), next = document.getElementById('toDone');
+  const stateOut = document.getElementById('state'), next = document.getElementById('toPlay');
   const live = () => S.step === 'warp' && Paper.rect();
   const T = Settings.T, brushR = () => Paper.rect().h * T.brush / 100;   // brush radius from settings.js (study: 12%)
 

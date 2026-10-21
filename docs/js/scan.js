@@ -1,5 +1,5 @@
 /* Scan — the shared scan-line core, extracted from the three studies (the block was byte-identical in each).
-   Only change: canvasFit takes an optional ground colour.
+   Changes: canvasFit takes an optional ground colour; toGrey also keeps the colour pixels; draw can tint lines with the picture's colours.
    Rule: the brightness under each line lifts it, Rutt/Etra style. */
 const Scan = (() => {
   // Turn any image source into a small grey array we can sample quickly.
@@ -10,7 +10,7 @@ const Scan = (() => {
     const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(src, 0, 0, w, h);
     const px = g.getImageData(0, 0, w, h).data, a = new Float32Array(w * h);
     for (let i = 0; i < w * h; i++) a[i] = (0.299 * px[i * 4] + 0.587 * px[i * 4 + 1] + 0.114 * px[i * 4 + 2]) / 255;
-    return { w, h, a };
+    return { w, h, a, px };                 // px: the RGBA pixels, used for colour lines
   }
   function sample(G, u, v) {               // u,v in 0..1, bilinear
     const x = Math.min(G.w - 1.001, Math.max(0, u * (G.w - 1))), y = Math.min(G.h - 1.001, Math.max(0, v * (G.h - 1)));
@@ -27,12 +27,24 @@ const Scan = (() => {
      o.angle   direction in degrees (0 = horizontal, 90 = vertical)
      o.weight  line thickness in CSS px
      o.depth   how far brightness lifts a line, as a fraction of the picture height
-     o.warp    optional function (x, y) -> [dx, dy] that moves each point (and the picture with it) */
+     o.warp    optional function (x, y) -> [dx, dy] that moves each point (and the picture with it)
+     o.tint    true = colour each segment with the picture's colour where it started, so colour travels with warps */
+  const LEVELS = 6, PALETTE = [];               // colours are batched into 6×6×6 buckets so a frame costs ~200 strokes, not thousands
+  for (let r = 0; r < LEVELS; r++) for (let g = 0; g < LEVELS; g++) for (let b = 0; b < LEVELS; b++)
+    PALETTE.push(`rgb(${Math.round(r * 51)},${Math.round(g * 51)},${Math.round(b * 51)})`);
+  function colourKey(G, u, v) {
+    const i = (Math.round(Math.min(1, Math.max(0, v)) * (G.h - 1)) * G.w + Math.round(Math.min(1, Math.max(0, u)) * (G.w - 1))) * 4;
+    let r = G.px[i], g = G.px[i + 1], b = G.px[i + 2]; const m = Math.max(r, g, b, 1), f = (115 + 0.55 * m) / m;   // lift dark colours so they stay visible on black
+    const q = c => Math.min(LEVELS - 1, Math.round(c * f / 51));
+    return q(r) * 36 + q(g) * 6 + q(b);
+  }
   function draw(ctx, G, R, o) {
     const th = (o.angle || 0) * Math.PI / 180, dx = Math.cos(th), dy = Math.sin(th), nx = -dy, ny = dx;
     const cx = R.x + R.w / 2, cy = R.y + R.h / 2, L = Math.hypot(R.w, R.h) / 2;
     const gap = R.h / o.lines, step = Math.max(2, Math.min(4, gap / 1.5)), lift = (o.depth == null ? 0.045 : o.depth) * R.h;
     ctx.lineWidth = o.weight; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.strokeStyle = o.ink || '#e8e8e8';
+    const tint = o.tint && G.px, paths = tint ? new Map() : null;
+    let lx = 0, ly = 0;
     ctx.beginPath();
     for (let t = -L + ((L % gap) || gap) / 2; t <= L; t += gap) {
       let pen = false, prev = 0; const sm = o.smooth == null ? 0.3 : o.smooth;
@@ -43,10 +55,14 @@ const Scan = (() => {
         b = pen ? prev + (b - prev) * (1 - sm) : b; prev = b;   // smooth the signal along the line, as in scanlines.html
         let px = x - nx * b * lift, py = y - ny * b * lift;
         if (o.warp) { const d = o.warp(x, y); px += d[0]; py += d[1]; }
-        if (pen) ctx.lineTo(px, py); else { ctx.moveTo(px, py); pen = true; }
+        if (tint) {
+          if (pen) { const k = colourKey(G, (x - R.x) / R.w, (y - R.y) / R.h); let p = paths.get(k); if (!p) paths.set(k, p = new Path2D()); p.moveTo(lx, ly); p.lineTo(px, py); }
+          lx = px; ly = py; pen = true;
+        } else if (pen) ctx.lineTo(px, py); else { ctx.moveTo(px, py); pen = true; }
       }
     }
-    ctx.stroke();
+    if (tint) for (const [k, p] of paths) { ctx.strokeStyle = PALETTE[k]; ctx.stroke(p); }
+    else ctx.stroke();
   }
   function canvasFit(cv, fill) {              // fill: ground colour (added for the settings; studies used #000)
     const dpr = Math.min(2, devicePixelRatio || 1), W = cv.clientWidth, H = cv.clientHeight;

@@ -6,7 +6,7 @@
 <title>Scan Lines — Signal You Can Touch</title>
 <meta name="description" content="A sequential interaction prototype: capture a picture, tune it into scan lines, then warp the lines by hand.">
 <!-- ?v= forces browsers to fetch matching files after each update; bump it whenever css or js changes -->
-<link rel="stylesheet" href="css/style.css?v=4">
+<link rel="stylesheet" href="css/style.css?v=5">
 </head>
 <body data-step="capture">
 
@@ -20,6 +20,7 @@
     <li data-for="capture">capture</li>
     <li data-for="tune">tune</li>
     <li data-for="warp">warp</li>
+    <li data-for="play">play</li>
     <li data-for="done">done</li>
   </ol>
 </header>
@@ -56,6 +57,8 @@
       <div class="ctl" data-k="lines"><label for="lines">how many</label><output id="o_lines"></output><input type="range" id="lines" min="20" max="300" step="1" value="110"></div>
       <div class="ctl" data-k="angle"><label for="angle">direction</label><output id="o_angle"></output><input type="range" id="angle" min="0" max="180" step="1" value="0"></div>
       <div class="ctl" data-k="weight"><label for="weight">density</label><output id="o_weight"></output><input type="range" id="weight" min="0.3" max="4" step="0.05" value="1.4"></div>
+      <div class="ctl" role="group" aria-labelledby="inkLabel"><span id="inkLabel" class="lbl">ink</span><output id="o_ink">b/w</output>
+        <div class="seg"><button type="button" id="inkBW" aria-pressed="true">b/w</button><button type="button" id="inkColour" aria-pressed="false">colour</button></div></div>
     </div>
     <div class="foot">
       <div class="status">tune as much or as little as you like</div>
@@ -68,15 +71,35 @@
     <p class="note">with a mouse: drag to pull, scroll to spread or squeeze · double-tap clears the warp</p>
     <div class="foot">
       <div class="status">the picture travels with the lines you move</div>
-      <button class="next" id="toDone" type="button">finish →</button>
+      <button class="next" id="toPlay" type="button">next: play →</button>
+    </div>
+  </section>
+
+  <section class="bar panel" data-panel="play" aria-label="Step 4: play">
+    <h2><span>make the lines move</span><span>optional · move over the lines</span></h2>
+    <div class="ctls">
+      <div class="ctl"><label for="fx_drift">drift</label><output id="o_fx_drift"></output><input type="range" id="fx_drift" min="0" max="30" step="0.5" value="4"></div>
+      <div class="ctl"><label for="fx_speed">drift speed</label><output id="o_fx_speed"></output><input type="range" id="fx_speed" min="0.05" max="3" step="0.05" value="0.3"></div>
+      <div class="ctl"><label for="fx_gain">sound strength</label><output id="o_fx_gain"></output><input type="range" id="fx_gain" min="0" max="3" step="0.05" value="1"></div>
+      <div class="ctl"><label for="fx_pull">magnet pull</label><output id="o_fx_pull"></output><input type="range" id="fx_pull" min="0" max="60" step="1" value="18"></div>
+      <div class="ctl"><label for="fx_size">magnet size</label><output id="o_fx_size"></output><input type="range" id="fx_size" min="5" max="50" step="1" value="18"></div>
+      <div class="ctl ctl-btn"><span class="lbl">microphone</span><button type="button" id="sound" aria-pressed="false">sound: off</button></div>
+    </div>
+    <div class="foot">
+      <div class="status" id="playStatus" role="status">move over the lines · record whenever you like</div>
+      <div class="acts">
+        <button type="button" data-rec aria-pressed="false">● rec video</button>
+        <button class="next" id="toDone" type="button">finish →</button>
+      </div>
     </div>
   </section>
 
   <section class="bar panel end" data-panel="done" aria-label="Finished">
     <div class="foot">
-      <div class="status">signal shaped by hand</div>
+      <div class="status">signal shaped by hand · the lines still move</div>
       <div class="acts">
         <button id="save" type="button">save image</button>
+        <button type="button" data-rec aria-pressed="false">● rec video</button>
         <button id="restart" type="button">start over</button>
       </div>
     </div>
@@ -84,12 +107,14 @@
 
 </div>
 
-<script src="js/scan.js?v=4"></script>
-<script src="js/paper.js?v=4"></script>
-<script src="js/settings.js?v=4"></script>
-<script src="js/capture.js?v=4"></script>
-<script src="js/tune.js?v=4"></script>
-<script src="js/warp.js?v=4"></script>
-<script src="js/app.js?v=4"></script>
+<script src="js/scan.js?v=5"></script>
+<script src="js/paper.js?v=5"></script>
+<script src="js/settings.js?v=5"></script>
+<script src="js/capture.js?v=5"></script>
+<script src="js/tune.js?v=5"></script>
+<script src="js/warp.js?v=5"></script>
+<script src="js/record.js?v=5"></script>
+<script src="js/play.js?v=5"></script>
+<script src="js/app.js?v=5"></script>
 </body>
 </html>
