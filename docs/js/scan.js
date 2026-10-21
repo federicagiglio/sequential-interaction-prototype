@@ -48,7 +48,7 @@ const Scan = (() => {
     }
     ctx.stroke();
   }
-  function canvasFit(cv, fill) {              // fill: ground colour (added for the behavior controls; studies used #000)
+  function canvasFit(cv, fill) {              // fill: ground colour (added for the settings; studies used #000)
     const dpr = Math.min(2, devicePixelRatio || 1), W = cv.clientWidth, H = cv.clientHeight;
     if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
     const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.fillStyle = fill || '#000'; ctx.fillRect(0, 0, W, H);

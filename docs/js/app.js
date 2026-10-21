@@ -31,7 +31,7 @@
   Capture.next.addEventListener('click', () => {
     if (!S.pic) return;
     S.G = Paper.signal();                    // the picture becomes the signal
-    go('tune'); Paper.crossfade(reduced ? 0 : Behavior.T.crossfade);
+    go('tune'); Paper.crossfade(reduced ? 0 : Settings.T.crossfade);
   });
   Tune.next.addEventListener('click', () => go('warp'));
   Warp.next.addEventListener('click', () => { Warp.release(); go('done'); });

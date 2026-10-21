@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Scan Lines — Signal You Can Touch</title>
 <meta name="description" content="A sequential interaction prototype: capture a picture, tune it into scan lines, then warp the lines by hand.">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body data-step="capture">
@@ -25,20 +24,6 @@
 </header>
 <div class="hint" id="hint">the picture becomes the signal for the lines</div>
 
-<!-- Behavior controls: collapsible panel bound to the prototype's real look-and-feel parameters (js/behavior.js). -->
-<button class="bc-toggle" id="bcToggle" type="button" aria-expanded="false" aria-controls="bc">behavior controls</button>
-<aside class="bc" id="bc" hidden aria-label="Behavior controls">
-  <header class="bc-head"><b>behavior controls</b><button id="bcClose" type="button" aria-label="Close behavior controls">close ×</button></header>
-  <div class="bc-body" id="bcBody"></div>
-  <footer class="bc-foot">
-    <div class="bc-acts">
-      <button id="bcReset" type="button" title="Back to the empty frame; controls are kept">reset state</button>
-      <button id="bcDefaults" type="button" title="Put every control back to its default">restore defaults</button>
-      <button id="bcCopy" type="button" title="Copy all values as a prompt you can paste">copy as prompt</button>
-    </div>
-    <div class="bc-note" id="bcNote" role="status"></div>
-  </footer>
-</aside>
 <div class="sr" id="announce" role="status" aria-live="polite"></div>
 
 <!-- One dock at the bottom. Each step owns one panel; only the current panel is visible and reachable. -->
@@ -46,11 +31,16 @@
 
   <section class="bar panel" data-panel="capture" aria-label="Step 1: capture">
     <h2><span>source picture</span><output id="dims">—</output></h2>
-    <div class="choices">
-      <label for="take"><b>Take a picture</b><span>opens the camera on phones and tablets</span>
-        <input type="file" id="take" accept="image/*" capture="user"></label>
+    <div class="choices" id="choices">
+      <button type="button" class="choice" id="take"><b>Take a picture</b><span>opens this device's camera</span></button>
       <label for="pick"><b>Upload a picture</b><span>JPEG, PNG, WebP or GIF from this device</span>
         <input type="file" id="pick" accept="image/*"></label>
+      <!-- fallback when the browser cannot open the camera directly (no getUserMedia, e.g. outside HTTPS) -->
+      <input type="file" id="takeFile" accept="image/*" capture="user" hidden>
+    </div>
+    <div class="choices" id="cam" hidden>
+      <button type="button" class="choice" id="snap"><b>● Snap</b><span>keep this frame as the picture</span></button>
+      <button type="button" class="choice" id="camCancel"><b>Cancel</b><span>close the camera</span></button>
     </div>
     <div class="foot">
       <div class="status" id="status" role="status">Nothing leaves your device. The picture stays in this page.</div>
@@ -94,7 +84,7 @@
 
 <script src="js/scan.js"></script>
 <script src="js/paper.js"></script>
-<script src="js/behavior.js"></script>
+<script src="js/settings.js"></script>
 <script src="js/capture.js"></script>
 <script src="js/tune.js"></script>
 <script src="js/warp.js"></script>

@@ -1,7 +1,7 @@
 /* Paper — the one surface that persists through the sequence.
    Holds the shared state every step reads and writes, works out where the paper sits, and draws it.
    The paper rectangle depends only on the picture and the window, never on the step, so it does not move between steps.
-   Look-and-feel values come from Behavior.T (the behavior controls panel). */
+   Look-and-feel values come from Settings.T (js/settings.js). */
 const Paper = (() => {
   const cv = document.getElementById('cv'), frame = document.getElementById('frame'), dock = document.getElementById('dock');
   const FW = 72, FH = 48;                       // warp field resolution (study 03)
@@ -13,9 +13,10 @@ const Paper = (() => {
     FX: new Float32Array(FW * FH), FY: new Float32Array(FW * FH), edits: 0,   // study 03 output
     ring: null,                                 // brush ring overlay (study 03)
     mix: 1,                                     // 0 = photo, 1 = scan lines; animated when the picture becomes the signal
+    live: null,                                 // webcam <video> while the camera preview is open (capture step)
   };
   let R = null, Sheet = null, queued = false;
-  const T = () => Behavior.T;
+  const T = () => Settings.T;
 
   /* Reserve room for the tallest panel so the paper keeps one size and position for the whole sequence. */
   function pad(H) {
@@ -42,7 +43,7 @@ const Paper = (() => {
   }
   const fieldWarp = (x, y) => { const d = fieldAt((x - R.x) / R.w, (y - R.y) / R.h); return [d[0] * R.h, d[1] * R.h]; };
 
-  /* Idle motion (behavior controls). Returns a warp(x, y) for time t in seconds, or null when off. */
+  /* Idle motion (settings). Returns a warp(x, y) for time t in seconds, or null when off. */
   function motion(t, Rect) {
     const { motion: m, amp: A, speed: f, angle } = { ...T(), angle: S.P.angle };
     if (m === 'none' || !A) return null;
@@ -76,24 +77,30 @@ const Paper = (() => {
     queued = false;
     const o = T(), { ctx, W, H } = Scan.canvasFit(cv, o.bg);
     /* The sheet: the frame from study 01 (4:3 by default), kept for every step. The picture sits inside it, contained, never cropped. */
-    Sheet = Scan.fit({ w: Behavior.ASPECTS[o.aspect], h: 1 }, W, H, pad(H));
+    Sheet = Scan.fit({ w: o.aspect, h: 1 }, W, H, pad(H));
     Object.assign(frame.style, { left: Sheet.x + 'px', top: Sheet.y + 'px', width: Sheet.w + 'px', height: Sheet.h + 'px' });
-    frame.classList.toggle('blank', !S.pic);
+    const cam = S.live && S.live.videoWidth ? S.live : null;
+    frame.classList.toggle('blank', !S.pic && !cam);
+    if (cam) {                                  // live webcam preview, mirrored like a mirror, on the same sheet
+      const V = inner(Sheet, cam.videoWidth, cam.videoHeight);
+      ctx.save(); ctx.translate(V.x + V.w, V.y); ctx.scale(-1, 1); ctx.drawImage(cam, 0, 0, V.w, V.h); ctx.restore();
+      R = null; return;
+    }
     if (!S.pic) { R = null; return; }
     R = inner(Sheet);
     paint(ctx, (now || performance.now()) / 1000);
     if (S.ring && o.ringA) { ctx.strokeStyle = o.ink; ctx.globalAlpha = o.ringA; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(S.ring.x, S.ring.y, S.ring.r, 0, 7); ctx.stroke(); ctx.globalAlpha = 1; }
   }
   /* Picture rectangle inside the sheet; extra room on top for the brightness lift. */
-  function inner(F) {
+  function inner(F, w = S.pic.naturalWidth, h = S.pic.naturalHeight) {
     const m = T().margin / 100, top = m + T().depth * 0.75;
-    const r = Scan.fit({ w: S.pic.naturalWidth, h: S.pic.naturalHeight }, F.w, F.h, [F.h * top, F.w * m, F.h * m, F.w * m]);
+    const r = Scan.fit({ w, h }, F.w, F.h, [F.h * top, F.w * m, F.h * m, F.w * m]);
     return { x: F.x + r.x, y: F.y + r.y, w: r.w, h: r.h };
   }
   const ask = () => { if (!queued) { queued = true; requestAnimationFrame(render); } };
 
-  /* Keep redrawing while idle motion is on and lines are showing. */
-  (function loop() { if (S.G && T().motion !== 'none' && T().amp) ask(); requestAnimationFrame(loop); })();
+  /* Keep redrawing while the camera preview is open, or while idle motion is on and lines are showing. */
+  (function loop() { if (S.live || (S.G && T().motion !== 'none' && T().amp)) ask(); requestAnimationFrame(loop); })();
 
   /* Picture → signal: fade the photo out while its scan lines fade in. */
   function crossfade(ms) {

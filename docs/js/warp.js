@@ -5,7 +5,7 @@ const Warp = (() => {
   const S = Paper.S, FW = Paper.FW, FH = Paper.FH, stage = document.getElementById('stage'), cv = Paper.canvas;
   const stateOut = document.getElementById('state'), next = document.getElementById('toDone');
   const live = () => S.step === 'warp' && Paper.rect();
-  const T = Behavior.T, brushR = () => Paper.rect().h * T.brush / 100;   // brush radius from the behavior controls (study: 12%)
+  const T = Settings.T, brushR = () => Paper.rect().h * T.brush / 100;   // brush radius from settings.js (study: 12%)
 
   /* Apply a move to every node near (cx, cy): fn(nodeX, nodeY) returns the push in screen px. */
   function brush(cx, cy, radius, fn) {
