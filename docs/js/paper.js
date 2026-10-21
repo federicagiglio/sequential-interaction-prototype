@@ -13,7 +13,8 @@ const Paper = (() => {
     FX: new Float32Array(FW * FH), FY: new Float32Array(FW * FH), edits: 0,   // study 03 output
     ring: null,                                 // brush ring overlay (study 03)
     mix: 1,                                     // 0 = photo, 1 = scan lines; animated when the picture becomes the signal
-    live: null,                                 // webcam <video> while the camera preview is open (capture step)
+    live: null,                                 // webcam <video> while the snap preview is open (capture step)
+    feed: null,                                 // webcam <video> in live view: S.pic is then a canvas refreshed every frame
   };
   let R = null, Sheet = null, queued = false;
   const T = () => Settings.T;
@@ -92,15 +93,32 @@ const Paper = (() => {
     if (S.ring && o.ringA) { ctx.strokeStyle = o.ink; ctx.globalAlpha = o.ringA; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(S.ring.x, S.ring.y, S.ring.r, 0, 7); ctx.stroke(); ctx.globalAlpha = 1; }
   }
   /* Picture rectangle inside the sheet; extra room on top for the brightness lift. */
-  function inner(F, w = S.pic.naturalWidth, h = S.pic.naturalHeight) {
+  function inner(F, w = S.pic.naturalWidth || S.pic.width, h = S.pic.naturalHeight || S.pic.height) {
     const m = T().margin / 100, top = m + T().depth * 0.75;
     const r = Scan.fit({ w, h }, F.w, F.h, [F.h * top, F.w * m, F.h * m, F.w * m]);
     return { x: F.x + r.x, y: F.y + r.y, w: r.w, h: r.h };
   }
   const ask = () => { if (!queued) { queued = true; requestAnimationFrame(render); } };
 
-  /* Keep redrawing while the camera preview is open, or while idle motion is on and lines are showing. */
-  (function loop() { if (S.live || (S.G && T().motion !== 'none' && T().amp)) ask(); requestAnimationFrame(loop); })();
+  /* Live view: copy each new camera frame (mirrored, as in the preview) into S.pic and, once the lines exist, rebuild the signal. */
+  let lastFrame = -1;
+  function grab() {
+    const v = S.feed; if (!v || !v.videoWidth || v.currentTime === lastFrame) return false;
+    lastFrame = v.currentTime;
+    const c = S.pic, g = c.getContext('2d');
+    if (c.width !== v.videoWidth || c.height !== v.videoHeight) { c.width = v.videoWidth; c.height = v.videoHeight; }
+    g.setTransform(-1, 0, 0, 1, c.width, 0); g.drawImage(v, 0, 0, c.width, c.height);
+    if (S.G) S.G = signal();
+    return true;
+  }
+  function setFeed(v) { S.feed = v; S.pic = document.createElement('canvas'); lastFrame = -1; grab(); ask(); }
+  function clearFeed() { S.feed = null; lastFrame = -1; }
+
+  /* Keep redrawing while a camera is showing, or while idle motion is on and lines are showing. */
+  (function loop() {
+    if (S.live || (S.feed && grab()) || (S.G && T().motion !== 'none' && T().amp)) ask();
+    requestAnimationFrame(loop);
+  })();
 
   /* Picture → signal: fade the photo out while its scan lines fade in. */
   function crossfade(ms) {
@@ -126,5 +144,5 @@ const Paper = (() => {
   function clearWarp() { S.FX.fill(0); S.FY.fill(0); S.edits = 0; }
 
   addEventListener('resize', ask);
-  return { S, FW, FH, rect: () => R, sheet: () => Sheet, canvas: cv, render, ask, crossfade, exportPNG, clearWarp, signal, resignal };
+  return { S, FW, FH, rect: () => R, sheet: () => Sheet, canvas: cv, render, ask, crossfade, exportPNG, clearWarp, signal, resignal, setFeed, clearFeed };
 })();

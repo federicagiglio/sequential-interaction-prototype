@@ -4,8 +4,8 @@
   const S = Paper.S;
   const ORDER = ['capture', 'tune', 'warp', 'done'];
   const COPY = {
-    capture: { tag: '01 / capture', hint: 'the picture becomes the signal for the lines', say: 'Step 1 of 3: capture. Take or upload a picture.' },
-    tune:    { tag: '02 / tune',    hint: 'brightness lifts every line',                 say: 'Step 2 of 3: tune. Move each of the three sliders.' },
+    capture: { tag: '01 / capture', hint: 'the picture becomes the signal for the lines', say: 'Step 1 of 3: capture. Take a picture, upload one, or start a live view.' },
+    tune:    { tag: '02 / tune',    hint: 'brightness lifts every line',                 say: 'Step 2 of 3: tune. Sliders are optional; continue whenever you are ready.' },
     warp:    { tag: '03 / warp',    hint: 'the picture travels with the lines you move',  say: 'Step 3 of 3: warp. Drag, pinch or scroll on the picture, then finish.' },
     done:    { tag: '04 / done',    hint: 'signal you can touch',                         say: 'Finished. Save the image or start over.' },
   };

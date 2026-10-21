@@ -9,8 +9,8 @@ https://federicagiglio.github.io/sequential-interaction-prototype/
 
 A picture becomes an analog video signal (Rutt/Etra style scan lines) that you tune like a monitor and then bend by hand. One linear sequence on one persistent sheet:
 
-1. **Capture**: take a picture with the device camera (webcam on a computer, front camera on a phone; live preview on the sheet, then *Snap*) or upload one. *next* appears once a picture is in.
-2. **Tune**: three sliders (how many lines, direction, density) redraw the lines live. *next* appears once each slider has been moved.
+1. **Capture**: choose a source. *Take a picture* opens the device camera (webcam on a computer, front camera on a phone) with a live preview on the sheet, then *Snap*. *Upload a picture* picks a file. *Live view* uses the running camera itself, so the lines keep following the camera through every later step. *next* appears once a source is in.
+2. **Tune**: three sliders (how many lines, direction, density) redraw the lines live. Tuning is optional; *next* is available straight away.
 3. **Warp**: drag to pull lines, pinch or scroll to spread or squeeze them, double-tap to clear. *finish* is available at any time.
 4. **Done**: the finished sheet on its own, with *save image* (PNG) and *start over*.
 
